@@ -177,10 +177,17 @@ function FractalVines() {
     }
 
     // ── Initial generation at initial size ──
-    const initW = canvas.offsetWidth
-    const initH = canvas.offsetHeight
-    let allCurves = generate(initW, initH)
+    let genW = canvas.offsetWidth
+    let genH = canvas.offsetHeight
+    let allCurves = generate(genW, genH)
     let maxTime = Math.max(...allCurves.map(s => s.growStart + s.growDur))
+
+    function regenerate() {
+      genW = canvas.offsetWidth
+      genH = canvas.offsetHeight
+      allCurves = generate(genW, genH)
+      maxTime = Math.max(...allCurves.map(s => s.growStart + s.growDur))
+    }
 
     function applySize() {
       const dpr = window.devicePixelRatio
@@ -192,9 +199,6 @@ function FractalVines() {
     function drawFull(elapsed) {
       const cw = canvas.offsetWidth
       const ch = canvas.offsetHeight
-      // Shift to keep generation centered when window resizes
-      const ox = (cw - initW) / 2
-      const oy = (ch - initH) / 2
       ctx.clearRect(0, 0, cw, ch)
 
       for (const seg of allCurves) {
@@ -222,7 +226,7 @@ function FractalVines() {
           const isPartial = ci === fullCurves
 
           if (!started) {
-            ctx.moveTo(c.p0.x + ox, c.p0.y + oy)
+            ctx.moveTo(c.p0.x, c.p0.y)
             started = true
           }
 
@@ -240,9 +244,9 @@ function FractalVines() {
             const b0y = my+(b1y-my)*t
             const a3x = a2x+(b0x-a2x)*t
             const a3y = a2y+(b0y-a2y)*t
-            ctx.bezierCurveTo(a1x+ox, a1y+oy, a2x+ox, a2y+oy, a3x+ox, a3y+oy)
+            ctx.bezierCurveTo(a1x, a1y, a2x, a2y, a3x, a3y)
           } else if (!isPartial) {
-            ctx.bezierCurveTo(c.cp1.x+ox, c.cp1.y+oy, c.cp2.x+ox, c.cp2.y+oy, c.p1.x+ox, c.p1.y+oy)
+            ctx.bezierCurveTo(c.cp1.x, c.cp1.y, c.cp2.x, c.cp2.y, c.p1.x, c.p1.y)
           }
         }
         ctx.stroke()
@@ -251,7 +255,15 @@ function FractalVines() {
     }
 
     function drawFrame(time) {
-      if (!startTime) startTime = time
+      if (!startTime) {
+        startTime = time
+        // Re-generate if canvas wasn't laid out when effect first ran
+        const cw = canvas.offsetWidth
+        const ch = canvas.offsetHeight
+        if (cw !== genW || ch !== genH) {
+          regenerate()
+        }
+      }
       const elapsed = (time - startTime) / 1000
       lastElapsed = elapsed
 
@@ -269,6 +281,7 @@ function FractalVines() {
     animId = requestAnimationFrame(drawFrame)
 
     const onResize = () => {
+      regenerate()
       applySize()
       drawFull(animDone ? maxTime + 1 : lastElapsed)
     }
