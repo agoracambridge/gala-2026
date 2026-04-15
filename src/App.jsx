@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import './App.css'
 
 const carouselImages = [
@@ -31,32 +31,236 @@ const faqData = [
   },
 ]
 
-function VineBackground() {
-  return (
-    <div className="vines" aria-hidden="true">
-      <svg className="vines__svg" viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice" fill="none">
-        {/* ── Left vine cluster ── */}
-        <path className="vine vine--1" d="M120,900 C120,780 90,720 100,640 C110,560 80,500 95,420 C110,340 70,280 90,200 C110,120 85,60 100,0" strokeWidth="1.5" />
-        <path className="vine vine--2" d="M95,420 C130,400 160,420 180,390 C200,360 230,370 250,345 Q270,325 260,300" strokeWidth="1.2" />
-        <path className="vine vine--3" d="M180,390 C175,370 190,355 205,360 C220,365 215,380 200,385" strokeWidth="1" />
-        <path className="vine vine--4" d="M100,640 C70,620 40,630 20,600 C0,570 -10,540 15,510 Q35,490 30,460" strokeWidth="1.2" />
-        <path className="vine vine--5" d="M20,600 C35,585 50,590 48,575 C46,560 30,558 25,570" strokeWidth="0.8" />
-        <path className="vine vine--6" d="M90,200 C60,185 40,195 25,175 C10,155 20,135 40,130 C55,127 50,145 38,148" strokeWidth="1" />
-        <path className="vine vine--7" d="M250,345 C265,335 275,345 268,355 C260,365 248,358 252,348" strokeWidth="0.8" />
-        {/* ── Right vine cluster ── */}
-        <path className="vine vine--8" d="M1320,900 C1320,800 1350,740 1340,660 C1330,580 1360,510 1345,430 C1330,350 1365,280 1345,200 C1325,120 1355,50 1340,0" strokeWidth="1.5" />
-        <path className="vine vine--9" d="M1345,430 C1310,410 1280,430 1260,400 C1240,370 1210,380 1190,355 Q1170,335 1180,305" strokeWidth="1.2" />
-        <path className="vine vine--10" d="M1260,400 C1265,378 1250,362 1235,368 C1220,374 1225,390 1242,394" strokeWidth="1" />
-        <path className="vine vine--11" d="M1340,660 C1370,640 1400,650 1415,618 C1430,586 1440,555 1420,525 Q1405,505 1410,470" strokeWidth="1.2" />
-        <path className="vine vine--12" d="M1415,618 C1400,602 1385,608 1388,592 C1391,576 1408,574 1412,588" strokeWidth="0.8" />
-        <path className="vine vine--13" d="M1345,200 C1375,185 1395,198 1410,178 C1425,158 1415,136 1395,132 C1380,130 1386,148 1398,150" strokeWidth="1" />
-        <path className="vine vine--14" d="M1180,305 C1168,295 1158,305 1165,316 C1172,327 1185,320 1180,310" strokeWidth="0.8" />
-        {/* ── Top corner wisps ── */}
-        <path className="vine vine--15" d="M0,80 C40,75 70,90 100,70 C130,50 120,25 145,15 Q165,8 160,30" strokeWidth="1" />
-        <path className="vine vine--16" d="M1440,80 C1400,75 1370,90 1340,70 C1310,50 1320,25 1295,15 Q1275,8 1280,30" strokeWidth="1" />
-      </svg>
-    </div>
-  )
+function FractalVines() {
+  const canvasRef = useRef(null)
+
+  useEffect(() => {
+    const canvas = canvasRef.current
+    const ctx = canvas.getContext('2d')
+    let animId
+    let startTime
+
+    const resize = () => {
+      canvas.width = canvas.offsetWidth * window.devicePixelRatio
+      canvas.height = canvas.offsetHeight * window.devicePixelRatio
+      ctx.scale(window.devicePixelRatio, window.devicePixelRatio)
+    }
+    resize()
+    window.addEventListener('resize', resize)
+
+    const W = canvas.offsetWidth
+    const H = canvas.offsetHeight
+
+    // Seeded PRNG
+    let rngState = 71
+    const rng = () => {
+      rngState = (rngState * 16807) % 2147483647
+      return rngState / 2147483647
+    }
+
+    // ── Spatial grid — roots avoid each other only ──
+    const CELL = 40
+    const cols = Math.ceil(W / CELL)
+    const rows = Math.ceil(H / CELL)
+    const grid = new Float64Array(cols * rows)
+    let rootId = 0
+
+    function markCell(px, py, id) {
+      const c = Math.floor(px / CELL), r = Math.floor(py / CELL)
+      if (c >= 0 && c < cols && r >= 0 && r < rows) grid[r * cols + c] = id
+    }
+
+    function isOccupiedByOther(px, py, myId) {
+      const cc = Math.floor(px / CELL), rc = Math.floor(py / CELL)
+      for (let dr = -1; dr <= 1; dr++)
+        for (let dc = -1; dc <= 1; dc++) {
+          const c = cc + dc, r = rc + dr
+          if (c >= 0 && c < cols && r >= 0 && r < rows) {
+            const v = grid[r * cols + c]
+            if (v > 0 && v !== myId) return true
+          }
+        }
+      return false
+    }
+
+    // Evaluate cubic bezier at t
+    function bezAt(p0, cp1, cp2, p1, t) {
+      const u = 1 - t
+      return {
+        x: u*u*u*p0.x + 3*u*u*t*cp1.x + 3*u*t*t*cp2.x + t*t*t*p1.x,
+        y: u*u*u*p0.y + 3*u*u*t*cp1.y + 3*u*t*t*cp2.y + t*t*t*p1.y,
+      }
+    }
+
+    function bezTangent(p0, cp1, cp2, p1, t) {
+      const u = 1 - t
+      return {
+        x: 3*u*u*(cp1.x-p0.x) + 6*u*t*(cp2.x-cp1.x) + 3*t*t*(p1.x-cp2.x),
+        y: 3*u*u*(cp1.y-p0.y) + 6*u*t*(cp2.y-cp1.y) + 3*t*t*(p1.y-cp2.y),
+      }
+    }
+
+    function markBez(p0, cp1, cp2, p1, id) {
+      for (let s = 0; s <= 10; s++) {
+        const pt = bezAt(p0, cp1, cp2, p1, s / 10)
+        markCell(pt.x, pt.y, id)
+      }
+    }
+
+    // ── Build vines ──
+    const allCurves = []
+
+    function buildVine(sx, sy, angle, segLen, numSegs, depth, maxDepth, rid, rootOffset) {
+      if (depth > maxDepth || numSegs < 1) return
+
+      const curveBias = (rng() - 0.5) * 0.3
+      const curves = []
+      let x = sx, y = sy, a = angle
+
+      for (let i = 0; i < numSegs; i++) {
+        const bend = curveBias + (rng() - 0.5) * 0.6
+        const halfLen = segLen * 0.5
+
+        const cp1 = {
+          x: x + Math.cos(a) * halfLen + Math.cos(a + Math.PI/2) * bend * halfLen,
+          y: y + Math.sin(a) * halfLen + Math.sin(a + Math.PI/2) * bend * halfLen,
+        }
+
+        a += bend * 0.5 + (rng() - 0.5) * 0.3
+
+        const ex = x + Math.cos(a) * segLen
+        const ey = y + Math.sin(a) * segLen
+
+        const cp2 = {
+          x: ex - Math.cos(a) * halfLen + Math.cos(a + Math.PI/2) * bend * halfLen * 0.5,
+          y: ey - Math.sin(a) * halfLen + Math.sin(a + Math.PI/2) * bend * halfLen * 0.5,
+        }
+
+        // Only avoid other root vines (skip first 2 segs for children)
+        if (i >= 2 && isOccupiedByOther(ex, ey, rid)) break
+
+        markBez({x,y}, cp1, cp2, {x:ex,y:ey}, rid)
+        curves.push({ p0:{x,y}, cp1, cp2, p1:{x:ex,y:ey} })
+        x = ex; y = ey
+      }
+
+      if (curves.length === 0) return
+
+      const thickness = Math.max(0.5, 2.2 * (1 - depth * 0.28))
+      const opacity = 0.2 + 0.15 * (1 - depth / maxDepth)
+
+      // Within a vine: same depth branches grow simultaneously
+      // Different root vines are staggered by rootOffset
+      allCurves.push({
+        curves,
+        thickness,
+        opacity,
+        depth,
+        growStart: rootOffset + depth * 0.6,
+        growDur: curves.length * 0.18 + rng() * 0.2,
+      })
+
+      // Spawn children from along the curves
+      const numChildren = 3 + Math.floor(rng() * 4)
+      for (let i = 0; i < numChildren; i++) {
+        const ci = Math.floor(rng() * curves.length)
+        const c = curves[ci]
+        const t = 0.1 + rng() * 0.8
+        const bp = bezAt(c.p0, c.cp1, c.cp2, c.p1, t)
+        const tang = bezTangent(c.p0, c.cp1, c.cp2, c.p1, t)
+        const parentAngle = Math.atan2(tang.y, tang.x)
+        const branchAngle = parentAngle + (rng() > 0.5 ? 1 : -1) * (0.3 + rng() * 0.9)
+        const childSegs = 2 + Math.floor(rng() * 4)
+        const childLen = segLen * (0.5 + rng() * 0.25)
+
+        buildVine(bp.x, bp.y, branchAngle, childLen, childSegs, depth + 1, maxDepth, rid, rootOffset)
+      }
+    }
+
+    // ── Plant roots — each with a staggered start time ──
+    rootId = 1; buildVine(0, H * 0.82, -0.35, H * 0.05, 10, 0, 4, rootId, 0)
+    rootId = 2; buildVine(0, H * 0.22, 0.3, H * 0.04, 8, 0, 4, rootId, 0.4)
+    rootId = 3; buildVine(0, H * 0.55, -0.1, H * 0.035, 7, 0, 3, rootId, 0.8)
+
+    rootId = 4; buildVine(W, H * 0.78, Math.PI + 0.3, H * 0.045, 10, 0, 4, rootId, 0.2)
+    rootId = 5; buildVine(W, H * 0.15, Math.PI - 0.25, H * 0.038, 8, 0, 4, rootId, 0.6)
+    rootId = 6; buildVine(W, H * 0.5, Math.PI + 0.12, H * 0.032, 7, 0, 3, rootId, 1.0)
+
+    rootId = 7; buildVine(W * 0.04, 0, Math.PI * 0.4, H * 0.032, 6, 0, 3, rootId, 0.3)
+    rootId = 8; buildVine(W * 0.96, 0, Math.PI * 0.6, H * 0.032, 6, 0, 3, rootId, 0.5)
+
+    // ── Render ──
+    function drawFrame(time) {
+      if (!startTime) startTime = time
+      const elapsed = (time - startTime) / 1000
+
+      ctx.clearRect(0, 0, W, H)
+
+      for (const seg of allCurves) {
+        const t = (elapsed - seg.growStart) / seg.growDur
+        if (t <= 0) continue
+        const progress = Math.min(1, t)
+        const ease = 1 - Math.pow(1 - progress, 2)
+
+        ctx.save()
+        ctx.strokeStyle = `rgba(142, 118, 12, ${seg.opacity})`
+        ctx.lineWidth = seg.thickness
+        ctx.lineCap = 'round'
+        ctx.lineJoin = 'round'
+
+        // How many full curves + partial last curve to draw
+        const totalCurves = seg.curves.length
+        const drawLen = ease * totalCurves
+        const fullCurves = Math.floor(drawLen)
+        const partialT = drawLen - fullCurves
+
+        ctx.beginPath()
+        let started = false
+
+        for (let ci = 0; ci <= fullCurves && ci < totalCurves; ci++) {
+          const c = seg.curves[ci]
+          const isPartial = ci === fullCurves
+
+          if (!started) {
+            ctx.moveTo(c.p0.x, c.p0.y)
+            started = true
+          }
+
+          if (isPartial && partialT > 0) {
+            // Draw partial cubic bezier using de Casteljau subdivision at partialT
+            const t = partialT
+            // Split bezier [p0,cp1,cp2,p1] at t — left half control points
+            const a0 = c.p0
+            const a1 = { x: c.p0.x+(c.cp1.x-c.p0.x)*t, y: c.p0.y+(c.cp1.y-c.p0.y)*t }
+            const m = { x: c.cp1.x+(c.cp2.x-c.cp1.x)*t, y: c.cp1.y+(c.cp2.y-c.cp1.y)*t }
+            const a2 = { x: a1.x+(m.x-a1.x)*t, y: a1.y+(m.y-a1.y)*t }
+            const b1 = { x: c.cp2.x+(c.p1.x-c.cp2.x)*t, y: c.cp2.y+(c.p1.y-c.cp2.y)*t }
+            const b0 = { x: m.x+(b1.x-m.x)*t, y: m.y+(b1.y-m.y)*t }
+            const a3 = { x: a2.x+(b0.x-a2.x)*t, y: a2.y+(b0.y-a2.y)*t }
+            ctx.bezierCurveTo(a1.x, a1.y, a2.x, a2.y, a3.x, a3.y)
+          } else if (!isPartial) {
+            ctx.bezierCurveTo(c.cp1.x, c.cp1.y, c.cp2.x, c.cp2.y, c.p1.x, c.p1.y)
+          }
+        }
+        ctx.stroke()
+        ctx.restore()
+      }
+
+      const maxTime = Math.max(...allCurves.map(s => s.growStart + s.growDur))
+      if (elapsed < maxTime + 0.3) {
+        animId = requestAnimationFrame(drawFrame)
+      }
+    }
+
+    animId = requestAnimationFrame(drawFrame)
+
+    return () => {
+      cancelAnimationFrame(animId)
+      window.removeEventListener('resize', resize)
+    }
+  }, [])
+
+  return <canvas ref={canvasRef} className="fractal-vines" aria-hidden="true" />
 }
 
 function Hero() {
@@ -70,7 +274,7 @@ function Hero() {
 
   return (
     <section className="hero">
-      <VineBackground />
+      <FractalVines />
       <h1 className="hero__heading">You&rsquo;re Invited</h1>
       <div className="hero__line-h" />
       <div className="hero__title-wrap">
