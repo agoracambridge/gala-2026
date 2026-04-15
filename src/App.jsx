@@ -39,51 +39,11 @@ function FractalVines() {
     const ctx = canvas.getContext('2d')
     let animId
     let startTime
+    let animDone = false
+    let lastElapsed = 0
 
-    const resize = () => {
-      canvas.width = canvas.offsetWidth * window.devicePixelRatio
-      canvas.height = canvas.offsetHeight * window.devicePixelRatio
-      ctx.scale(window.devicePixelRatio, window.devicePixelRatio)
-    }
-    resize()
-    window.addEventListener('resize', resize)
+    const SEED = 71
 
-    const W = canvas.offsetWidth
-    const H = canvas.offsetHeight
-
-    // Seeded PRNG
-    let rngState = 71
-    const rng = () => {
-      rngState = (rngState * 16807) % 2147483647
-      return rngState / 2147483647
-    }
-
-    // ── Spatial grid — roots avoid each other only ──
-    const CELL = 40
-    const cols = Math.ceil(W / CELL)
-    const rows = Math.ceil(H / CELL)
-    const grid = new Float64Array(cols * rows)
-    let rootId = 0
-
-    function markCell(px, py, id) {
-      const c = Math.floor(px / CELL), r = Math.floor(py / CELL)
-      if (c >= 0 && c < cols && r >= 0 && r < rows) grid[r * cols + c] = id
-    }
-
-    function isOccupiedByOther(px, py, myId) {
-      const cc = Math.floor(px / CELL), rc = Math.floor(py / CELL)
-      for (let dr = -1; dr <= 1; dr++)
-        for (let dc = -1; dc <= 1; dc++) {
-          const c = cc + dc, r = rc + dr
-          if (c >= 0 && c < cols && r >= 0 && r < rows) {
-            const v = grid[r * cols + c]
-            if (v > 0 && v !== myId) return true
-          }
-        }
-      return false
-    }
-
-    // Evaluate cubic bezier at t
     function bezAt(p0, cp1, cp2, p1, t) {
       const u = 1 - t
       return {
@@ -100,101 +60,142 @@ function FractalVines() {
       }
     }
 
-    function markBez(p0, cp1, cp2, p1, id) {
-      for (let s = 0; s <= 10; s++) {
-        const pt = bezAt(p0, cp1, cp2, p1, s / 10)
-        markCell(pt.x, pt.y, id)
+    // ── Generate vines using actual canvas dimensions ──
+    function generate(W, H) {
+      let rngState = SEED
+      const rng = () => {
+        rngState = (rngState * 16807) % 2147483647
+        return rngState / 2147483647
       }
-    }
 
-    // ── Build vines ──
-    const allCurves = []
+      const CELL = Math.max(20, Math.min(W, H) * 0.03)
+      const cols = Math.ceil(W / CELL)
+      const rows = Math.ceil(H / CELL)
+      const grid = new Float64Array(cols * rows)
 
-    function buildVine(sx, sy, angle, segLen, numSegs, depth, maxDepth, rid, rootOffset) {
-      if (depth > maxDepth || numSegs < 1) return
+      function markCell(px, py, id) {
+        const c = Math.floor(px / CELL), r = Math.floor(py / CELL)
+        if (c >= 0 && c < cols && r >= 0 && r < rows) grid[r * cols + c] = id
+      }
 
-      const curveBias = (rng() - 0.5) * 0.3
+      function isOccupiedByOther(px, py, myId) {
+        const cc = Math.floor(px / CELL), rc = Math.floor(py / CELL)
+        for (let dr = -1; dr <= 1; dr++)
+          for (let dc = -1; dc <= 1; dc++) {
+            const c = cc + dc, r = rc + dr
+            if (c >= 0 && c < cols && r >= 0 && r < rows) {
+              const v = grid[r * cols + c]
+              if (v > 0 && v !== myId) return true
+            }
+          }
+        return false
+      }
+
+      function markBez(p0, cp1, cp2, p1, id) {
+        for (let s = 0; s <= 10; s++) {
+          const pt = bezAt(p0, cp1, cp2, p1, s / 10)
+          markCell(pt.x, pt.y, id)
+        }
+      }
+
       const curves = []
-      let x = sx, y = sy, a = angle
 
-      for (let i = 0; i < numSegs; i++) {
-        const bend = curveBias + (rng() - 0.5) * 0.6
-        const halfLen = segLen * 0.5
+      function buildVine(sx, sy, angle, segLen, numSegs, depth, maxDepth, rid, rootOffset) {
+        if (depth > maxDepth || numSegs < 1) return
 
-        const cp1 = {
-          x: x + Math.cos(a) * halfLen + Math.cos(a + Math.PI/2) * bend * halfLen,
-          y: y + Math.sin(a) * halfLen + Math.sin(a + Math.PI/2) * bend * halfLen,
+        const curveBias = (rng() - 0.5) * 0.3
+        const segs = []
+        let x = sx, y = sy, a = angle
+
+        for (let i = 0; i < numSegs; i++) {
+          const bend = curveBias + (rng() - 0.5) * 0.6
+          const halfLen = segLen * 0.5
+
+          const cp1 = {
+            x: x + Math.cos(a) * halfLen + Math.cos(a + Math.PI/2) * bend * halfLen,
+            y: y + Math.sin(a) * halfLen + Math.sin(a + Math.PI/2) * bend * halfLen,
+          }
+
+          a += bend * 0.5 + (rng() - 0.5) * 0.3
+
+          const ex = x + Math.cos(a) * segLen
+          const ey = y + Math.sin(a) * segLen
+
+          const cp2 = {
+            x: ex - Math.cos(a) * halfLen + Math.cos(a + Math.PI/2) * bend * halfLen * 0.5,
+            y: ey - Math.sin(a) * halfLen + Math.sin(a + Math.PI/2) * bend * halfLen * 0.5,
+          }
+
+          if (i >= 2 && isOccupiedByOther(ex, ey, rid)) break
+
+          markBez({x,y}, cp1, cp2, {x:ex,y:ey}, rid)
+          segs.push({ p0:{x,y}, cp1, cp2, p1:{x:ex,y:ey} })
+          x = ex; y = ey
         }
 
-        a += bend * 0.5 + (rng() - 0.5) * 0.3
+        if (segs.length === 0) return
 
-        const ex = x + Math.cos(a) * segLen
-        const ey = y + Math.sin(a) * segLen
+        const thickness = Math.max(0.4, 2.2 * (1 - depth * 0.15))
+        const opacity = 0.2 + 0.15 * (1 - depth / maxDepth)
 
-        const cp2 = {
-          x: ex - Math.cos(a) * halfLen + Math.cos(a + Math.PI/2) * bend * halfLen * 0.5,
-          y: ey - Math.sin(a) * halfLen + Math.sin(a + Math.PI/2) * bend * halfLen * 0.5,
+        curves.push({
+          curves: segs, thickness, opacity, depth,
+          growStart: rootOffset + depth * 0.6,
+          growDur: segs.length * 0.18 + rng() * 0.2,
+        })
+
+        const numChildren = 3 + Math.floor(rng() * 4)
+        for (let i = 0; i < numChildren; i++) {
+          const ci = Math.floor(rng() * segs.length)
+          const c = segs[ci]
+          const t = 0.1 + rng() * 0.8
+          const bp = bezAt(c.p0, c.cp1, c.cp2, c.p1, t)
+          const tang = bezTangent(c.p0, c.cp1, c.cp2, c.p1, t)
+          const parentAngle = Math.atan2(tang.y, tang.x)
+          const branchAngle = parentAngle + (rng() > 0.5 ? 1 : -1) * (0.3 + rng() * 0.9)
+          const childSegs = 2 + Math.floor(rng() * 4)
+          const childLen = segLen * (0.5 + rng() * 0.25)
+          buildVine(bp.x, bp.y, branchAngle, childLen, childSegs, depth + 1, maxDepth, rid, rootOffset)
         }
-
-        // Only avoid other root vines (skip first 2 segs for children)
-        if (i >= 2 && isOccupiedByOther(ex, ey, rid)) break
-
-        markBez({x,y}, cp1, cp2, {x:ex,y:ey}, rid)
-        curves.push({ p0:{x,y}, cp1, cp2, p1:{x:ex,y:ey} })
-        x = ex; y = ey
       }
 
-      if (curves.length === 0) return
+      let rootId
+      rootId = 1; buildVine(0, H * 0.82, -0.35, H * 0.05, 10, 0, 6, rootId, 0)
+      rootId = 2; buildVine(0, H * 0.22, 0.3, H * 0.04, 8, 0, 6, rootId, 0.4)
+      rootId = 3; buildVine(0, H * 0.55, -0.1, H * 0.035, 7, 0, 5, rootId, 0.8)
 
-      const thickness = Math.max(0.5, 2.2 * (1 - depth * 0.28))
-      const opacity = 0.2 + 0.15 * (1 - depth / maxDepth)
+      rootId = 4; buildVine(W, H * 0.78, Math.PI + 0.35, H * 0.04, 7, 0, 6, rootId, 0.2)
+      rootId = 5; buildVine(W, H * 0.15, Math.PI - 0.25, H * 0.038, 8, 0, 6, rootId, 0.6)
+      rootId = 6; buildVine(W, H * 0.5, Math.PI + 0.12, H * 0.032, 7, 0, 5, rootId, 1.0)
 
-      // Within a vine: same depth branches grow simultaneously
-      // Different root vines are staggered by rootOffset
-      allCurves.push({
-        curves,
-        thickness,
-        opacity,
-        depth,
-        growStart: rootOffset + depth * 0.6,
-        growDur: curves.length * 0.18 + rng() * 0.2,
-      })
+      rootId = 7; buildVine(W * 0.04, 0, Math.PI * 0.4, H * 0.032, 6, 0, 5, rootId, 0.3)
+      rootId = 8; buildVine(W * 0.96, 0, Math.PI * 0.6, H * 0.032, 6, 0, 5, rootId, 0.5)
 
-      // Spawn children from along the curves
-      const numChildren = 3 + Math.floor(rng() * 4)
-      for (let i = 0; i < numChildren; i++) {
-        const ci = Math.floor(rng() * curves.length)
-        const c = curves[ci]
-        const t = 0.1 + rng() * 0.8
-        const bp = bezAt(c.p0, c.cp1, c.cp2, c.p1, t)
-        const tang = bezTangent(c.p0, c.cp1, c.cp2, c.p1, t)
-        const parentAngle = Math.atan2(tang.y, tang.x)
-        const branchAngle = parentAngle + (rng() > 0.5 ? 1 : -1) * (0.3 + rng() * 0.9)
-        const childSegs = 2 + Math.floor(rng() * 4)
-        const childLen = segLen * (0.5 + rng() * 0.25)
+      rootId = 9; buildVine(W, H * 0.95, 220 * Math.PI / 180, H * 0.045, 10, 0, 6, rootId, 0.7)
 
-        buildVine(bp.x, bp.y, branchAngle, childLen, childSegs, depth + 1, maxDepth, rid, rootOffset)
-      }
+      return curves
     }
 
-    // ── Plant roots — each with a staggered start time ──
-    rootId = 1; buildVine(0, H * 0.82, -0.35, H * 0.05, 10, 0, 4, rootId, 0)
-    rootId = 2; buildVine(0, H * 0.22, 0.3, H * 0.04, 8, 0, 4, rootId, 0.4)
-    rootId = 3; buildVine(0, H * 0.55, -0.1, H * 0.035, 7, 0, 3, rootId, 0.8)
+    // ── Initial generation at initial size ──
+    const initW = canvas.offsetWidth
+    const initH = canvas.offsetHeight
+    let allCurves = generate(initW, initH)
+    let maxTime = Math.max(...allCurves.map(s => s.growStart + s.growDur))
 
-    rootId = 4; buildVine(W, H * 0.78, Math.PI + 0.3, H * 0.045, 10, 0, 4, rootId, 0.2)
-    rootId = 5; buildVine(W, H * 0.15, Math.PI - 0.25, H * 0.038, 8, 0, 4, rootId, 0.6)
-    rootId = 6; buildVine(W, H * 0.5, Math.PI + 0.12, H * 0.032, 7, 0, 3, rootId, 1.0)
+    function applySize() {
+      const dpr = window.devicePixelRatio
+      canvas.width = canvas.offsetWidth * dpr
+      canvas.height = canvas.offsetHeight * dpr
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
+    }
 
-    rootId = 7; buildVine(W * 0.04, 0, Math.PI * 0.4, H * 0.032, 6, 0, 3, rootId, 0.3)
-    rootId = 8; buildVine(W * 0.96, 0, Math.PI * 0.6, H * 0.032, 6, 0, 3, rootId, 0.5)
-
-    // ── Render ──
-    function drawFrame(time) {
-      if (!startTime) startTime = time
-      const elapsed = (time - startTime) / 1000
-
-      ctx.clearRect(0, 0, W, H)
+    function drawFull(elapsed) {
+      const cw = canvas.offsetWidth
+      const ch = canvas.offsetHeight
+      // Shift to keep generation centered when window resizes
+      const ox = (cw - initW) / 2
+      const oy = (ch - initH) / 2
+      ctx.clearRect(0, 0, cw, ch)
 
       for (const seg of allCurves) {
         const t = (elapsed - seg.growStart) / seg.growDur
@@ -208,7 +209,6 @@ function FractalVines() {
         ctx.lineCap = 'round'
         ctx.lineJoin = 'round'
 
-        // How many full curves + partial last curve to draw
         const totalCurves = seg.curves.length
         const drawLen = ease * totalCurves
         const fullCurves = Math.floor(drawLen)
@@ -222,41 +222,61 @@ function FractalVines() {
           const isPartial = ci === fullCurves
 
           if (!started) {
-            ctx.moveTo(c.p0.x, c.p0.y)
+            ctx.moveTo(c.p0.x + ox, c.p0.y + oy)
             started = true
           }
 
           if (isPartial && partialT > 0) {
-            // Draw partial cubic bezier using de Casteljau subdivision at partialT
             const t = partialT
-            // Split bezier [p0,cp1,cp2,p1] at t — left half control points
-            const a0 = c.p0
-            const a1 = { x: c.p0.x+(c.cp1.x-c.p0.x)*t, y: c.p0.y+(c.cp1.y-c.p0.y)*t }
-            const m = { x: c.cp1.x+(c.cp2.x-c.cp1.x)*t, y: c.cp1.y+(c.cp2.y-c.cp1.y)*t }
-            const a2 = { x: a1.x+(m.x-a1.x)*t, y: a1.y+(m.y-a1.y)*t }
-            const b1 = { x: c.cp2.x+(c.p1.x-c.cp2.x)*t, y: c.cp2.y+(c.p1.y-c.cp2.y)*t }
-            const b0 = { x: m.x+(b1.x-m.x)*t, y: m.y+(b1.y-m.y)*t }
-            const a3 = { x: a2.x+(b0.x-a2.x)*t, y: a2.y+(b0.y-a2.y)*t }
-            ctx.bezierCurveTo(a1.x, a1.y, a2.x, a2.y, a3.x, a3.y)
+            const a1x = c.p0.x+(c.cp1.x-c.p0.x)*t
+            const a1y = c.p0.y+(c.cp1.y-c.p0.y)*t
+            const mx = c.cp1.x+(c.cp2.x-c.cp1.x)*t
+            const my = c.cp1.y+(c.cp2.y-c.cp1.y)*t
+            const a2x = a1x+(mx-a1x)*t
+            const a2y = a1y+(my-a1y)*t
+            const b1x = c.cp2.x+(c.p1.x-c.cp2.x)*t
+            const b1y = c.cp2.y+(c.p1.y-c.cp2.y)*t
+            const b0x = mx+(b1x-mx)*t
+            const b0y = my+(b1y-my)*t
+            const a3x = a2x+(b0x-a2x)*t
+            const a3y = a2y+(b0y-a2y)*t
+            ctx.bezierCurveTo(a1x+ox, a1y+oy, a2x+ox, a2y+oy, a3x+ox, a3y+oy)
           } else if (!isPartial) {
-            ctx.bezierCurveTo(c.cp1.x, c.cp1.y, c.cp2.x, c.cp2.y, c.p1.x, c.p1.y)
+            ctx.bezierCurveTo(c.cp1.x+ox, c.cp1.y+oy, c.cp2.x+ox, c.cp2.y+oy, c.p1.x+ox, c.p1.y+oy)
           }
         }
         ctx.stroke()
         ctx.restore()
       }
+    }
 
-      const maxTime = Math.max(...allCurves.map(s => s.growStart + s.growDur))
+    function drawFrame(time) {
+      if (!startTime) startTime = time
+      const elapsed = (time - startTime) / 1000
+      lastElapsed = elapsed
+
+      applySize()
+      drawFull(elapsed)
+
       if (elapsed < maxTime + 0.3) {
         animId = requestAnimationFrame(drawFrame)
+      } else {
+        animDone = true
       }
     }
 
+    applySize()
     animId = requestAnimationFrame(drawFrame)
+
+    const onResize = () => {
+      applySize()
+      drawFull(animDone ? maxTime + 1 : lastElapsed)
+    }
+    window.addEventListener('resize', onResize)
 
     return () => {
       cancelAnimationFrame(animId)
-      window.removeEventListener('resize', resize)
+      window.removeEventListener('resize', onResize)
     }
   }, [])
 
