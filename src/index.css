@@ -1,0 +1,53 @@
+@font-face {
+  font-family: 'Didot';
+  src: url('/fonts/Didot.ttc') format('collection');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Didot';
+  src: url('/fonts/Didot.ttc') format('collection');
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Didot';
+  src: url('/fonts/Didot.ttc') format('collection');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+*,
+*::before,
+*::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  --bg: #010b13;
+  --card: #021422;
+  --gold-bright: #ecbe07;
+  --gold-muted: #8e760c;
+  --white: #ffffff;
+  --font-display: 'Didot', 'Playfair Display', serif;
+  --font-body: 'Libre Caslon Display', serif;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: var(--bg);
+  color: var(--white);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
