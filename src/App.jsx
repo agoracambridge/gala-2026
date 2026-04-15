@@ -189,10 +189,16 @@ function FractalVines() {
       maxTime = Math.max(...allCurves.map(s => s.growStart + s.growDur))
     }
 
+    let prevW = 0, prevH = 0
     function applySize() {
       const dpr = window.devicePixelRatio
-      canvas.width = canvas.offsetWidth * dpr
-      canvas.height = canvas.offsetHeight * dpr
+      const w = canvas.offsetWidth * dpr
+      const h = canvas.offsetHeight * dpr
+      if (w === prevW && h === prevH) return
+      prevW = w
+      prevH = h
+      canvas.width = w
+      canvas.height = h
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
     }
 
