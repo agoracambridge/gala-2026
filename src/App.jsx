@@ -31,6 +31,34 @@ const faqData = [
   },
 ]
 
+function VineBackground() {
+  return (
+    <div className="vines" aria-hidden="true">
+      <svg className="vines__svg" viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice" fill="none">
+        {/* ── Left vine cluster ── */}
+        <path className="vine vine--1" d="M120,900 C120,780 90,720 100,640 C110,560 80,500 95,420 C110,340 70,280 90,200 C110,120 85,60 100,0" strokeWidth="1.5" />
+        <path className="vine vine--2" d="M95,420 C130,400 160,420 180,390 C200,360 230,370 250,345 Q270,325 260,300" strokeWidth="1.2" />
+        <path className="vine vine--3" d="M180,390 C175,370 190,355 205,360 C220,365 215,380 200,385" strokeWidth="1" />
+        <path className="vine vine--4" d="M100,640 C70,620 40,630 20,600 C0,570 -10,540 15,510 Q35,490 30,460" strokeWidth="1.2" />
+        <path className="vine vine--5" d="M20,600 C35,585 50,590 48,575 C46,560 30,558 25,570" strokeWidth="0.8" />
+        <path className="vine vine--6" d="M90,200 C60,185 40,195 25,175 C10,155 20,135 40,130 C55,127 50,145 38,148" strokeWidth="1" />
+        <path className="vine vine--7" d="M250,345 C265,335 275,345 268,355 C260,365 248,358 252,348" strokeWidth="0.8" />
+        {/* ── Right vine cluster ── */}
+        <path className="vine vine--8" d="M1320,900 C1320,800 1350,740 1340,660 C1330,580 1360,510 1345,430 C1330,350 1365,280 1345,200 C1325,120 1355,50 1340,0" strokeWidth="1.5" />
+        <path className="vine vine--9" d="M1345,430 C1310,410 1280,430 1260,400 C1240,370 1210,380 1190,355 Q1170,335 1180,305" strokeWidth="1.2" />
+        <path className="vine vine--10" d="M1260,400 C1265,378 1250,362 1235,368 C1220,374 1225,390 1242,394" strokeWidth="1" />
+        <path className="vine vine--11" d="M1340,660 C1370,640 1400,650 1415,618 C1430,586 1440,555 1420,525 Q1405,505 1410,470" strokeWidth="1.2" />
+        <path className="vine vine--12" d="M1415,618 C1400,602 1385,608 1388,592 C1391,576 1408,574 1412,588" strokeWidth="0.8" />
+        <path className="vine vine--13" d="M1345,200 C1375,185 1395,198 1410,178 C1425,158 1415,136 1395,132 C1380,130 1386,148 1398,150" strokeWidth="1" />
+        <path className="vine vine--14" d="M1180,305 C1168,295 1158,305 1165,316 C1172,327 1185,320 1180,310" strokeWidth="0.8" />
+        {/* ── Top corner wisps ── */}
+        <path className="vine vine--15" d="M0,80 C40,75 70,90 100,70 C130,50 120,25 145,15 Q165,8 160,30" strokeWidth="1" />
+        <path className="vine vine--16" d="M1440,80 C1400,75 1370,90 1340,70 C1310,50 1320,25 1295,15 Q1275,8 1280,30" strokeWidth="1" />
+      </svg>
+    </div>
+  )
+}
+
 function Hero() {
   const [scrolled, setScrolled] = useState(false)
 
@@ -42,6 +70,7 @@ function Hero() {
 
   return (
     <section className="hero">
+      <VineBackground />
       <h1 className="hero__heading">You&rsquo;re Invited</h1>
       <div className="hero__line-h" />
       <div className="hero__title-wrap">

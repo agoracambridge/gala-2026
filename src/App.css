@@ -21,6 +21,51 @@
      1px 0 var(--bg);
 }
 
+/* ───── Vine Background ───── */
+
+.vines {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.vines__svg {
+  width: 100%;
+  height: 100%;
+}
+
+.vine {
+  stroke: var(--gold-muted);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  fill: none;
+  opacity: 0.25;
+  stroke-dasharray: 1200;
+  stroke-dashoffset: 1200;
+}
+
+.vine--1, .vine--8 { animation: draw-vine 4s ease-out 0.3s forwards; stroke-dasharray: 1200; stroke-dashoffset: 1200; }
+.vine--2 { animation: draw-vine 2.5s ease-out 2s forwards; stroke-dasharray: 400; stroke-dashoffset: 400; }
+.vine--9 { animation: draw-vine 2.5s ease-out 2.2s forwards; stroke-dasharray: 400; stroke-dashoffset: 400; }
+.vine--4 { animation: draw-vine 2.2s ease-out 1.6s forwards; stroke-dasharray: 350; stroke-dashoffset: 350; }
+.vine--11 { animation: draw-vine 2.2s ease-out 1.8s forwards; stroke-dasharray: 350; stroke-dashoffset: 350; }
+.vine--3 { animation: draw-vine 1.5s ease-out 3.2s forwards; stroke-dasharray: 200; stroke-dashoffset: 200; }
+.vine--10 { animation: draw-vine 1.5s ease-out 3.4s forwards; stroke-dasharray: 200; stroke-dashoffset: 200; }
+.vine--5 { animation: draw-vine 1.2s ease-out 2.8s forwards; stroke-dasharray: 150; stroke-dashoffset: 150; }
+.vine--12 { animation: draw-vine 1.2s ease-out 3.0s forwards; stroke-dasharray: 150; stroke-dashoffset: 150; }
+.vine--6 { animation: draw-vine 1.8s ease-out 3.5s forwards; stroke-dasharray: 250; stroke-dashoffset: 250; }
+.vine--13 { animation: draw-vine 1.8s ease-out 3.7s forwards; stroke-dasharray: 250; stroke-dashoffset: 250; }
+.vine--7 { animation: draw-vine 1s ease-out 4.2s forwards; stroke-dasharray: 100; stroke-dashoffset: 100; }
+.vine--14 { animation: draw-vine 1s ease-out 4.4s forwards; stroke-dasharray: 100; stroke-dashoffset: 100; }
+.vine--15 { animation: draw-vine 2s ease-out 1s forwards; stroke-dasharray: 300; stroke-dashoffset: 300; }
+.vine--16 { animation: draw-vine 2s ease-out 1.2s forwards; stroke-dasharray: 300; stroke-dashoffset: 300; }
+
+@keyframes draw-vine {
+  to { stroke-dashoffset: 0; }
+}
+
 /* ───── Hero Section ───── */
 
 .hero {
@@ -31,6 +76,11 @@
   justify-content: center;
   position: relative;
   padding: 2rem;
+}
+
+.hero > *:not(.vines) {
+  position: relative;
+  z-index: 1;
 }
 
 .hero__heading {
