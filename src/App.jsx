@@ -284,10 +284,16 @@ function FractalVines() {
 }
 
 function Hero() {
-  const [scrolled, setScrolled] = useState(false)
+  const actionsRef = useRef(null)
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 80)
+    const onScroll = () => {
+      const el = actionsRef.current
+      if (!el) return
+      const fade = Math.max(0, 1 - window.scrollY / 300)
+      el.style.opacity = fade
+      el.style.pointerEvents = fade < 0.05 ? 'none' : 'auto'
+    }
     window.addEventListener('scroll', onScroll, { passive: true })
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
@@ -307,17 +313,22 @@ function Hero() {
         <span>&lsquo;Quin House, Boston</span>
         <span>Black-tie Optional</span>
       </div>
-      <button
-        className={`hero__scroll${scrolled ? ' hero__scroll--hidden' : ''}`}
-        onClick={() =>
-          document.getElementById('about').scrollIntoView({ behavior: 'smooth' })
-        }
-        aria-label="Scroll to next section"
-      >
-        <svg viewBox="0 0 20 12">
-          <polyline points="2,2 10,10 18,2" />
-        </svg>
-      </button>
+      <div className="hero__actions" ref={actionsRef}>
+        <a className="hero__rsvp" href="https://luma.com/vgrs0l58" target="_blank" rel="noopener noreferrer">
+          RSVP
+        </a>
+        <button
+          className="hero__scroll"
+          onClick={() =>
+            document.getElementById('about').scrollIntoView({ behavior: 'smooth' })
+          }
+          aria-label="Scroll to next section"
+        >
+          <svg viewBox="0 0 20 12">
+            <polyline points="2,2 10,10 18,2" />
+          </svg>
+        </button>
+      </div>
     </section>
   )
 }
@@ -387,7 +398,7 @@ function About() {
             toast for the members graduating; mingle with the alumni acting on
             grand ambition; and meet the members making things happen.
           </p>
-          <a className="about__rsvp" href="#rsvp">
+          <a className="about__rsvp" href="https://luma.com/vgrs0l58" target="_blank" rel="noopener noreferrer">
             RSVP
           </a>
         </div>

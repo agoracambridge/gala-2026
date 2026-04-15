@@ -44,7 +44,7 @@
   padding: 2rem;
 }
 
-.hero > *:not(.fractal-vines):not(.hero__scroll) {
+.hero > *:not(.fractal-vines):not(.hero__actions) {
   position: relative;
   z-index: 1;
 }
@@ -100,12 +100,39 @@
   letter-spacing: 0;
 }
 
-.hero__scroll {
+.hero__actions {
   position: absolute;
   bottom: 36px;
   left: 50%;
   transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 16px;
   z-index: 2;
+  transition: opacity 0.1s;
+}
+
+.hero__rsvp {
+  padding: 12px 48px;
+  border: 1.5px solid var(--gold-muted);
+  border-radius: 6px;
+  background: none;
+  color: var(--gold-muted);
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 20px;
+  letter-spacing: 0.05em;
+  text-decoration: none;
+  transition: border-color 0.3s, color 0.3s;
+}
+
+.hero__rsvp:hover {
+  border-color: var(--gold-bright);
+  color: var(--gold-bright);
+}
+
+.hero__scroll {
+  flex-shrink: 0;
   width: 40px;
   height: 40px;
   border: 1.5px solid var(--gold-muted);
@@ -135,10 +162,6 @@
   stroke: var(--gold-bright);
 }
 
-.hero__scroll--hidden {
-  opacity: 0;
-  pointer-events: none;
-}
 
 /* ───── About Section ───── */
 
