@@ -100,6 +100,17 @@
   letter-spacing: 0;
 }
 
+.hero__venue-link {
+  color: var(--white);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.hero__venue-link:hover,
+.hero__venue-link:focus-visible {
+  color: var(--gold-bright);
+}
+
 .hero__actions {
   position: absolute;
   bottom: 36px;
@@ -222,6 +233,17 @@
   font-style: italic;
   font-size: 19px;
   letter-spacing: 0.025em;
+}
+
+.about__venue-link {
+  color: var(--white);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.about__venue-link:hover,
+.about__venue-link:focus-visible {
+  color: var(--gold-bright);
 }
 
 .about__rsvp {
