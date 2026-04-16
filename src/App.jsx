@@ -20,7 +20,7 @@ const faqData = [
 
         question: 'What food will be served?',
         answer:
-            'A curated menu of seafood, fine meats, and cocktails has been arranged. Accommodations have been made for vegetarian diets. Reach out to the host if you have any concerns or requests.',
+            'A curated menu of seafood, fine meats, pasta, and cocktails has been arranged. Accommodations have been made for vegetarian diets. Reach out to the host if you have any concerns or requests.',
     },
     {
         id: 'parking',
@@ -446,20 +446,6 @@ function About() {
     )
 }
 
-function smoothScrollTo(targetY, duration = 1500) {
-    const startY = window.scrollY
-    const delta = targetY - startY
-    const startTime = performance.now()
-    const ease = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2)
-
-    function step(now) {
-        const t = Math.min((now - startTime) / duration, 1)
-        window.scrollTo(0, startY + delta * ease(t))
-        if (t < 1) requestAnimationFrame(step)
-    }
-    requestAnimationFrame(step)
-}
-
 function FAQ() {
     const [openIndex, setOpenIndex] = useState(null)
 
@@ -474,10 +460,7 @@ function FAQ() {
             if (idx < 0) return
             setOpenIndex(idx)
             requestAnimationFrame(() => {
-                const el = document.getElementById(hash)
-                if (!el) return
-                const targetY = el.getBoundingClientRect().top + window.scrollY
-                smoothScrollTo(targetY, 1500)
+                document.getElementById(hash)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
             })
         }
         applyHash()
