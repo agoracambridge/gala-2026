@@ -435,7 +435,7 @@ function About() {
                         who&rsquo;s-who&rsquo;s evening of Harvard entrepreneurship: ring a
                         toast for the members graduating; mingle with the alumni acting on
                         grand ambition; and meet the members making things happen.
-                        You'll be joined by special guests from across the startup ecosystem, current members & alumni, and the generous partners that make it all happen. Come for an unforgettable night of celebration. Leave with incredible conversations and connections.
+                        You'll be joined by special guests from across the startup ecosystem, current members & alumni, and the generous partners that make it all happen. Come for an unforgettable night of celebration. Leave with incredible conversation and connection.
                     </p>
                     <a className="about__rsvp" href="https://luma.com/vgrs0l58" target="_blank" rel="noopener noreferrer">
                         RSVP
