@@ -38,7 +38,7 @@ const faqData = [
         id: 'about',
         question: 'What is Agora?',
         answer:
-            'Agora is a social society at Harvard. Comprising of a men\u2019s and women\u2019s chapter, Agora seeks to cultivate grand ambitions and thoughtful pursuits among its members. Originally founded in 2024, Agora members have started venture-backed companies, studied abroad as Rhodes scholars, led initiatives such as Prod & HF0, and spearheaded frontier ML/AI research.',
+            'Agora is a social society for the most ambitious at Harvard. Comprising a men\u2019s and women\u2019s chapter, Agora seeks to cultivate a space for grand enterprise and thoughtful pursuit. Originally founded in 2024, Agora members have started venture-backed companies, studied abroad as Rhode Scholars, led entrepreneurship programs across campus, and spearheaded frontier ML/AI research at top labs.'
     },
 ]
 
@@ -422,20 +422,18 @@ function About() {
                 <span className="heading-ul">An evening of celebration</span>
             </h2>
             <p className="about__intro">
-                &emsp;&emsp;&emsp;&emsp;&emsp;&emsp;Join Agora and its members for its inaugural{' '}
-                <em>Spring Gala</em>, an evening celebrating all that its members have
-                accomplished in and out of the club.
+                <span className="tab">{'\t'}</span>Join Agora and its members for its inaugural{' '}
+                <em>Spring Gala</em>, a who's who evening of the Harvard entrepreneurship scene.
+            </p>
+            <p className="about__intro">
+                <span className="tab">{'\t'}</span>Founded in 2024, Agora is a club for the most ambitious at Harvard. Our members and alumni have started companies backed by Sequoia, General Catalyst, and Neo, studied as Rhodes Scholars, led research at OpenAI, DeepMind, and World Labs, and run programs like Prod and HF0.
             </p>
             <div className="about__content">
                 <Carousel />
                 <div className="about__right">
                     <p className="about__description">
-                        &emsp;&emsp;&emsp;&emsp;&emsp;&emsp;Hosted at the newly opened{' '}
-                        <em><a className="about__venue-link" href="https://thequinhouse.com" target="_blank" rel="noopener noreferrer">&lsquo;Quin House of Boston</a></em>, the <em>Spring Gala</em> is a
-                        who&rsquo;s-who&rsquo;s evening of Harvard entrepreneurship: ring a
-                        toast for the members graduating; mingle with the alumni acting on
-                        grand ambition; and meet the members making things happen.
-                        You'll be joined by special guests from across the startup ecosystem, current members & alumni, and the generous partners that make it all happen. Come for an unforgettable night of celebration. Leave with incredible conversation and connection.
+                        <span className="tab">{'\t'}</span>Hosted at the newly opened{' '}
+                        <em><a className="about__venue-link" href="https://thequinhouse.com" target="_blank" rel="noopener noreferrer">&lsquo;Quin House of Boston</a></em>, the <em>Spring Gala</em> is a night to celebrate the community and its impact. You'll be joined by special guests from across the startup ecosystem, alongside current members, alumni, and our generous partners.
                     </p>
                     <a className="about__rsvp" href="https://luma.com/vgrs0l58" target="_blank" rel="noopener noreferrer">
                         RSVP

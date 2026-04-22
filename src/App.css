@@ -197,7 +197,16 @@
   font-size: 20px;
   line-height: 1.55;
   letter-spacing: 0.025em;
-  margin-bottom: 32px;
+  margin-bottom: 26px;
+}
+
+.about__intro + .about__intro {
+  margin-top: -20px;
+}
+
+.tab {
+  white-space: pre;
+  tab-size: 4;
 }
 
 .about__intro em {
